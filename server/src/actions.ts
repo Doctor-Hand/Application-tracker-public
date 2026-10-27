@@ -4,7 +4,7 @@ import * as schema from "./schema";
 
 const stageSchema = z.enum(["Leads", "Needs Submitting", "Applied", "Interviewing", "Offer", "Closed/Rejected"]);
 const prepStatusSchema = z.enum(["none", "requested", "in_progress", "done", "blocked"]);
-const laneSchema = z.enum(["medical", "bridge"]);
+const laneSchema = z.enum(["primary", "secondary"]);
 const fitBreakdownSchema = z.object({
   role: z.number(),
   warm: z.number(),
@@ -166,7 +166,7 @@ const draftRow = z.object({
 });
 const settingsRow = z.object({
   auto_apply_enabled: z.boolean(),
-  auto_apply_bridge_enabled: z.boolean(),
+  auto_apply_secondary_enabled: z.boolean(),
   auto_apply_companies: z.array(z.string()),
   auto_apply_role_types: z.array(z.string()),
   auto_apply_scope_notes: z.string(),
@@ -283,7 +283,7 @@ export function computeFitFromQuestionnaire(answers: z.infer<typeof fitAnswersSc
 }
 
 type FitInput = {
-  lane: "medical" | "bridge";
+  lane: "primary" | "secondary";
   role: string;
   location: string;
   pay: string;
@@ -306,8 +306,8 @@ export function computeFit(input: FitInput): { score: number; breakdown: z.infer
   // Role alignment /30
   let role = 10;
   if (tags.includes("associate-level") || /\bassociate\b/.test(roleText)) role = 24;
-  else if (tags.includes("specialist") || /clinical (sales )?specialist/.test(roleText)) role = 20;
-  else if (/territory manager|account manager|sales representative|sales rep\b/.test(roleText)) role = 16;
+  else if (tags.includes("specialist") || /specialist/.test(roleText)) role = 20;
+  else if (/manager|representative|lead\b/.test(roleText)) role = 16;
   else if (/\bsr\.?\b|senior/.test(roleText)) role = 8;
   // Template note: add a small bonus here for your own priority companies if you want one.
   role = Math.min(30, role);
@@ -325,7 +325,7 @@ export function computeFit(input: FitInput): { score: number; breakdown: z.infer
 
   // Lane / pay fit /20
   let lane = 8;
-  if (input.lane === "medical") {
+  if (input.lane === "primary") {
     lane = 14;
     if (payText.length > 0) lane = 17;
     if (tags.includes("verified-live")) lane += 3;
@@ -502,7 +502,7 @@ export const Actions = {
         drafts: drafts.map(toApiDraft),
         settings: {
           auto_apply_enabled: settings ? settings.autoApply === 1 : true,
-          auto_apply_bridge_enabled: settings ? settings.autoApplyBridge === 1 : true,
+          auto_apply_secondary_enabled: settings ? settings.autoApplySecondary === 1 : true,
           auto_apply_companies: parseStringArray(settings?.autoApplyCompanies, ["*"]),
           auto_apply_role_types: parseStringArray(settings?.autoApplyRoleTypes, ["*"]),
           auto_apply_scope_notes: settings?.autoApplyScopeNotes ?? "",
@@ -772,10 +772,10 @@ export const Actions = {
 
   /**
    * Agent-side queue: every card waiting for prep, oldest first. The runner
-   * reads settings on every call: when bridge (fitness) auto-apply is off,
-   * bridge-lane cards are SKIPPED — left exactly as they are (still
-   * "requested", never blocked, never submitted) — while medical-lane cards
-   * continue normally. Turning bridge back on resumes them from the queue.
+   * reads settings on every call: when secondary-lane auto-apply is off,
+   * secondary-lane cards are SKIPPED — left exactly as they are (still
+   * "requested", never blocked, never submitted) — while primary-lane cards
+   * continue normally. Turning the secondary lane back on resumes them from the queue.
    */
   listPrepQueue: defineAction({
     request: z.object({}),
@@ -787,10 +787,10 @@ export const Actions = {
         db.select().from(schema.trackerSettings),
       ]);
       const settings = settingsRows.find((row) => row.id === 1);
-      const bridgeEnabled = settings ? settings.autoApplyBridge === 1 : true;
+      const secondaryEnabled = settings ? settings.autoApplySecondary === 1 : true;
       const queue = apps
         .filter((row) => row.prepStatus === "requested" || row.prepStatus === "in_progress")
-        .filter((row) => bridgeEnabled || row.lane !== "bridge")
+        .filter((row) => secondaryEnabled || row.lane !== "secondary")
         .sort((a, b) => (a.prepRequestedAt?.getTime() ?? 0) - (b.prepRequestedAt?.getTime() ?? 0));
       return { queue: queue.map(toApiApp) };
     },
@@ -916,10 +916,10 @@ export const Actions = {
       if (settings && settings.autoApply !== 1) {
         throw new Error("Auto-apply is paused in the tracker settings, so this submission was not recorded.");
       }
-      if (settings && settings.autoApplyBridge !== 1) {
+      if (settings && settings.autoApplySecondary !== 1) {
         const cardRows = await db.select().from(schema.applications).where(eq(schema.applications.id, args.id));
-        if (cardRows[0]?.lane === "bridge") {
-          throw new Error("Bridge (fitness) auto-apply is off in the tracker settings, so this bridge submission was not recorded. The card stays queued, untouched.");
+        if (cardRows[0]?.lane === "secondary") {
+          throw new Error("Secondary-lane auto-apply is off in the tracker settings, so this submission was not recorded. The card stays queued, untouched.");
         }
       }
       const now = new Date();
@@ -936,7 +936,7 @@ export const Actions = {
   updateSettings: defineAction({
     request: z.object({
       auto_apply_enabled: z.boolean().optional(),
-      auto_apply_bridge_enabled: z.boolean().optional(),
+      auto_apply_secondary_enabled: z.boolean().optional(),
       auto_apply_companies: z.array(z.string().trim().min(1).max(160)).max(200).optional(),
       auto_apply_role_types: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
       auto_apply_scope_notes: z.string().trim().max(4000).optional(),
@@ -950,7 +950,7 @@ export const Actions = {
       const existing = existingRows.find((row) => row.id === 1);
       const next = {
         autoApply: args.auto_apply_enabled !== undefined ? (args.auto_apply_enabled ? 1 : 0) : (existing?.autoApply ?? 1),
-        autoApplyBridge: args.auto_apply_bridge_enabled !== undefined ? (args.auto_apply_bridge_enabled ? 1 : 0) : (existing?.autoApplyBridge ?? 1),
+        autoApplySecondary: args.auto_apply_secondary_enabled !== undefined ? (args.auto_apply_secondary_enabled ? 1 : 0) : (existing?.autoApplySecondary ?? 1),
         autoApplyCompanies: args.auto_apply_companies !== undefined ? JSON.stringify(args.auto_apply_companies) : (existing?.autoApplyCompanies ?? '["*"]'),
         autoApplyRoleTypes: args.auto_apply_role_types !== undefined ? JSON.stringify(args.auto_apply_role_types) : (existing?.autoApplyRoleTypes ?? '["*"]'),
         autoApplyScopeNotes: args.auto_apply_scope_notes !== undefined ? args.auto_apply_scope_notes : (existing?.autoApplyScopeNotes ?? ""),
@@ -1249,12 +1249,12 @@ export const Actions = {
       const db = ctx.db<typeof schema>();
       const now = new Date();
       const apps = await db.select().from(schema.applications).orderBy(asc(schema.applications.id));
-      // Bridge-off means bridge cards waiting in the prep queue are being
+      // Secondary-off means secondary cards waiting in the prep queue are being
       // deliberately skipped by the runner — they are not "stuck", so the
       // 48h auto-recovery below must never mark them blocked.
       const maintenanceSettingsRows = await db.select().from(schema.trackerSettings);
       const maintenanceSettings = maintenanceSettingsRows.find((row) => row.id === 1);
-      const bridgeAutoApplyOff = maintenanceSettings ? maintenanceSettings.autoApplyBridge !== 1 : false;
+      const secondaryAutoApplyOff = maintenanceSettings ? maintenanceSettings.autoApplySecondary !== 1 : false;
       let scored = 0;
       let lockedCount = 0;
       let skippedLocked = 0;
@@ -1324,7 +1324,7 @@ export const Actions = {
           scored += 1;
         }
         const prepSince = row.prepUpdatedAt ?? row.prepRequestedAt;
-        if ((row.prepStatus === "requested" || row.prepStatus === "in_progress") && prepSince && !(bridgeAutoApplyOff && row.lane === "bridge")) {
+        if ((row.prepStatus === "requested" || row.prepStatus === "in_progress") && prepSince && !(secondaryAutoApplyOff && row.lane === "secondary")) {
           const waitingMs = now.getTime() - prepSince.getTime();
           if (waitingMs > STUCK_PREP_MS) {
             const waitingHours = Math.floor(waitingMs / 3_600_000);

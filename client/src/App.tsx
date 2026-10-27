@@ -12,7 +12,7 @@ type DraftStatus = Draft["status"];
 type MaintenanceReport = ApiResponse<typeof api, "dailyMaintenance">;
 type Stage = Application["stage"];
 type Lane = Application["lane"];
-type Tab = "onboarding" | "pipeline" | "bridge" | "logins" | "contacts" | "outreach" | "health" | "settings";
+type Tab = "onboarding" | "pipeline" | "secondary" | "logins" | "contacts" | "outreach" | "health" | "settings";
 type BoardFilter = Stage | "All" | "InPlay" | "ActiveApplications";
 
 /** The best posting link on a card: the employer's own careers posting wins
@@ -61,7 +61,7 @@ const EMPTY_FIT_ANSWERS: FitAnswers = {
   other_hiring_manager_known: "", other_deadline: "", other_next_step: "", other_deal_breakers: "", other_notes: "",
 };
 const EMPTY_APP: Omit<Application, "id" | "created_at" | "updated_at"> = {
-  lane: "medical", company: "", role: "", location: "", pay: "", req_id: "", stage: "Leads",
+  lane: "primary", company: "", role: "", location: "", pay: "", req_id: "", stage: "Leads",
   notes: "", people: "", tags: [], source_url: "",
   employer_url: "", link_status: "unchecked", link_checked_at: null,
   prep_status: "none", submit_url: "", prep_notes: "", prep_requested_at: null, prep_updated_at: null,
@@ -76,7 +76,7 @@ const EMPTY_DRAFT: Omit<Draft, "id" | "created_at" | "updated_at" | "sent_at" | 
 const ROLE_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "associate", label: "Associate" },
   { value: "css", label: "Specialist" },
-  { value: "sales_rep", label: "Sales Representative" },
+  { value: "sales_rep", label: "Full / senior role" },
   { value: "other", label: "Other" },
 ];
 const US_STATES: { code: string; name: string }[] = [
@@ -109,7 +109,7 @@ const FIT_PARTS: { key: "role" | "warm" | "lane" | "fresh" | "location"; label: 
 ];
 
 const FIT_ANSWER_LABELS: Record<string, string> = {
-  associate: "Associate", css: "Specialist", sales_rep: "Sales rep / territory", other: "Other role type",
+  associate: "Associate", css: "Specialist", sales_rep: "Full / senior role", other: "Other role type",
   exact: "Exact lane match", adjacent: "Adjacent lane", different: "Different lane",
   very_close: "Very close to what I want", somewhat: "Somewhat close", not_really: "Not really",
   strong: "Yes — strong connection", some: "Yes — someone", none: "No one",
@@ -983,7 +983,7 @@ function FitGuideModal({ onClose, onStartQuestionnaire }: { onClose: () => void;
             <h3>The 5 dimensions</h3>
             <div className="fit-dim-card"><h4>1. Role alignment — 30 points</h4><p>Is this the exact kind of job you want? It looks at: the role type (your primary target role type scores highest, closely related specialist roles are also in-lane, and the full/senior version of the role is a step up), whether the specialty matches your lane and target companies, and whether the day-to-day is close to the work you actually want.</p></div>
             <div className="fit-dim-card"><h4>2. Warm path — 25 points</h4><p>Do you have a person, not just a portal? It counts whether you know anyone at the company or on the team, who they are (hiring manager is strongest, then a rep on the team, then a recruiter, then another employee), whether anyone offered to refer you or forward your resume, and whether you&rsquo;ve already talked to someone on the team. Cold applications are near-meaningless in this market — this dimension is weighted heavily on purpose. Auto-scoring often underrates it because it can only see tags like &ldquo;warm-intro&rdquo; and names typed in the People field. If a contact forwarded your resume or you&rsquo;ve talked to someone on the team, the questionnaire captures that and auto-scoring can&rsquo;t erase it.</p></div>
-            <div className="fit-dim-card"><h4>3. Lane / pay fit — 20 points</h4><p>Does the offer structure work for your life? It distinguishes base salary vs base + commission vs draw vs pure commission, whether any pay is guaranteed, whether it covers your monthly essentials and your goals, and the hours — a sustainable week scores higher than heavy on-call if health and free time are deciding factors for you. For bridge jobs, guaranteed hourly pay is what matters most; pure commission scores low.</p></div>
+            <div className="fit-dim-card"><h4>3. Lane / pay fit — 20 points</h4><p>Does the offer structure work for your life? It distinguishes base salary vs base + commission vs draw vs pure commission, whether any pay is guaranteed, whether it covers your monthly essentials and your goals, and the hours — a sustainable week scores higher than heavy on-call if health and free time are deciding factors for you. For secondary jobs, guaranteed hourly pay is what matters most; pure commission scores low.</p></div>
             <div className="fit-dim-card"><h4>4. Freshness — 15 points</h4><p>Is the posting real and still open? When it was posted matters, and whether you (or your assistant) verified it&rsquo;s still accepting applications on the employer&rsquo;s own board matters more. A verified-live posting keeps its score; an unchecked or month-old posting decays.</p></div>
             <div className="fit-dim-card"><h4>5. Location — 10 points</h4><p>Where is the territory, how far is it, and what does it require day to day? Local roles score highest, elsewhere in your region next, remote after that. It also factors work style (hybrid / flexible vs 5 days on-site) and whether relocation is required — and whether you&rsquo;re actually OK with relocating.</p></div>
           </section>
@@ -1155,7 +1155,7 @@ function ApplicationModal({ initial, lane, onClose, onSave, saving }: {
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <form className="sheet" onSubmit={submit}>
-        <header><div><p>{initial ? "Edit opportunity" : "Quick add"}</p><h2>{initial ? initial.company : lane === "medical" ? "New medical lead" : "New bridge job"}</h2></div><button type="button" className="icon-button" onClick={onClose} aria-label="Close form"><Icon name="x"/></button></header>
+        <header><div><p>{initial ? "Edit opportunity" : "Quick add"}</p><h2>{initial ? initial.company : lane === "primary" ? "New primary lead" : "New secondary job"}</h2></div><button type="button" className="icon-button" onClick={onClose} aria-label="Close form"><Icon name="x"/></button></header>
         <div className="form-grid">
           <label>Company<input required value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })}/></label>
           <label>Role<input required value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}/></label>
@@ -1531,7 +1531,7 @@ type TrackerSettings = TrackerData["settings"];
 function SettingsView({ settings, applications, onUpdate }: {
   settings: TrackerSettings;
   applications: Application[];
-  onUpdate: (partial: Partial<{ auto_apply_enabled: boolean; auto_apply_bridge_enabled: boolean; auto_apply_companies: string[]; auto_apply_role_types: string[]; auto_apply_states: string[]; auto_apply_scope_notes: string }>) => void;
+  onUpdate: (partial: Partial<{ auto_apply_enabled: boolean; auto_apply_secondary_enabled: boolean; auto_apply_companies: string[]; auto_apply_role_types: string[]; auto_apply_states: string[]; auto_apply_scope_notes: string }>) => void;
 }) {
   const [scopeDraft, setScopeDraft] = useState(settings.auto_apply_scope_notes ?? "");
   const [scopeSaved, setScopeSaved] = useState(false);
@@ -1595,18 +1595,18 @@ function SettingsView({ settings, applications, onUpdate }: {
       <div className="settings-card">
         <div className="settings-card-head">
           <div>
-            <p className="settings-title">Bridge (fitness) job applications</p>
-            <p className="settings-desc">{settings.auto_apply_bridge_enabled ? "On — bridge-lane jobs (the fitness / bridge board) are queued and submitted under the same scope below, alongside medical roles." : "Off — bridge (fitness) applications are paused on their own. Queued bridge cards are skipped and left exactly as they are — never blocked, never submitted — while medical-lane applications continue normally. Turn it back on and the queued bridge cards resume."}</p>
+            <p className="settings-title">Secondary-lane job applications</p>
+            <p className="settings-desc">{settings.auto_apply_secondary_enabled ? "On — secondary-lane jobs (the secondary board) are queued and submitted under the same scope below, alongside primary-lane roles." : "Off — secondary-lane applications are paused on their own. Queued secondary-lane cards are skipped and left exactly as they are — never blocked, never submitted — while primary-lane applications continue normally. Turn it back on and the queued secondary cards resume."}</p>
           </div>
-          <button type="button" role="switch" aria-checked={settings.auto_apply_bridge_enabled} aria-label="Bridge (fitness) job applications" className={`toggle-switch ${settings.auto_apply_bridge_enabled ? "toggle-on" : ""}`} onClick={() => onUpdate({ auto_apply_bridge_enabled: !settings.auto_apply_bridge_enabled })}>
+          <button type="button" role="switch" aria-checked={settings.auto_apply_secondary_enabled} aria-label="Secondary-lane job applications" className={`toggle-switch ${settings.auto_apply_secondary_enabled ? "toggle-on" : ""}`} onClick={() => onUpdate({ auto_apply_secondary_enabled: !settings.auto_apply_secondary_enabled })}>
             <span className="toggle-knob" />
-            <span className="toggle-label">{settings.auto_apply_bridge_enabled ? "ON" : "OFF"}</span>
+            <span className="toggle-label">{settings.auto_apply_secondary_enabled ? "ON" : "OFF"}</span>
           </button>
         </div>
-        <button type="button" className="settings-onetap" onClick={() => onUpdate({ auto_apply_bridge_enabled: !settings.auto_apply_bridge_enabled })} aria-label={settings.auto_apply_bridge_enabled ? "Turn off bridge (fitness) job applications" : "Turn on bridge (fitness) job applications"}>
-          {settings.auto_apply_bridge_enabled ? "Turn off bridge applications" : "Turn on bridge applications"}
+        <button type="button" className="settings-onetap" onClick={() => onUpdate({ auto_apply_secondary_enabled: !settings.auto_apply_secondary_enabled })} aria-label={settings.auto_apply_secondary_enabled ? "Turn off secondary-lane job applications" : "Turn on secondary-lane job applications"}>
+          {settings.auto_apply_secondary_enabled ? "Turn off secondary applications" : "Turn on secondary applications"}
         </button>
-        <p className="settings-current">Separate from the main auto-apply switch above and from the company / role-type / state scope below — this one controls the bridge lane only.</p>
+        <p className="settings-current">Separate from the main auto-apply switch above and from the company / role-type / state scope below — this one controls the secondary lane only.</p>
       </div>
 
       <div className="settings-card">
@@ -1664,7 +1664,7 @@ function SettingsView({ settings, applications, onUpdate }: {
         <p className="settings-title">Scope notes — anything else</p>
         <p className="settings-desc">Free-text rules for auto-apply that don’t fit the buttons above — a territory, a division, pay floor, companies to avoid, anything. Type, save, or clear it right here.</p>
         <label className="settings-scope-label">Auto-apply scope notes
-          <textarea rows={5} value={scopeDraft} onChange={(e) => { setScopeDraft(e.target.value); setScopeSaved(false); }} placeholder="e.g. My target companies first. My target titles only. No pure-commission bridge jobs. My home region plus remote…" aria-label="Auto-apply scope notes" />
+          <textarea rows={5} value={scopeDraft} onChange={(e) => { setScopeDraft(e.target.value); setScopeSaved(false); }} placeholder="e.g. My target companies first. My target titles only. No pure-commission secondary jobs. My home region plus remote…" aria-label="Auto-apply scope notes" />
         </label>
         <div className="settings-scope-actions">
           <button type="button" className="primary-button settings-save" onClick={saveScope}>Save scope notes</button>
@@ -1697,7 +1697,7 @@ export function App() {
   const [checking, setChecking] = useState(false);
   const [requestingLoginKey, setRequestingLoginKey] = useState<string | null>(null);
 
-  const currentLane: Lane = tab === "bridge" ? "bridge" : "medical";
+  const currentLane: Lane = tab === "secondary" ? "secondary" : "primary";
 
   const laneApps = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1802,7 +1802,7 @@ export function App() {
       window.setTimeout(() => setCopiedId((current) => (current === draft.id ? null : current)), 4000);
     } catch { setError("Copy did not work here. Open Edit and copy the text manually."); }
   }
-  async function updateSettings(partial: Partial<{ auto_apply_enabled: boolean; auto_apply_bridge_enabled: boolean; auto_apply_companies: string[]; auto_apply_role_types: string[]; auto_apply_states: string[]; auto_apply_scope_notes: string }>) {
+  async function updateSettings(partial: Partial<{ auto_apply_enabled: boolean; auto_apply_secondary_enabled: boolean; auto_apply_companies: string[]; auto_apply_role_types: string[]; auto_apply_states: string[]; auto_apply_scope_notes: string }>) {
     setError("");
     try { await api.updateSettings(partial); await refresh(); }
     catch { setError("That setting could not be saved. Try again."); }
@@ -1830,7 +1830,7 @@ export function App() {
     catch { setError("That request could not be cleared. Try again."); }
   }
   function openLoginCard(app: Application) {
-    setTab(app.lane === "bridge" ? "bridge" : "pipeline");
+    setTab(app.lane === "secondary" ? "secondary" : "pipeline");
     setEditingApp(app);
   }
 
@@ -1882,8 +1882,8 @@ export function App() {
         <div className="workspace-head">
           <nav className="tabs" aria-label="Tracker views">
             <button className={tab === "onboarding" ? "active" : ""} onClick={() => setTab("onboarding")}>Onboarding</button>
-            <button className={tab === "pipeline" ? "active" : ""} onClick={() => setTab("pipeline")}>Pipeline <span>{tracker.data?.applications.filter((a) => a.lane === "medical").length}</span></button>
-            <button className={tab === "bridge" ? "active" : ""} onClick={() => setTab("bridge")}>Bridge Jobs <span>{tracker.data?.applications.filter((a) => a.lane === "bridge").length}</span></button>
+            <button className={tab === "pipeline" ? "active" : ""} onClick={() => setTab("pipeline")}>Pipeline <span>{tracker.data?.applications.filter((a) => a.lane === "primary").length}</span></button>
+            <button className={tab === "secondary" ? "active" : ""} onClick={() => setTab("secondary")}>Secondary Jobs <span>{tracker.data?.applications.filter((a) => a.lane === "secondary").length}</span></button>
             <button className={tab === "logins" ? "active" : ""} onClick={() => setTab("logins")}>Logins <span>{loginBlockedCount}</span></button>
             <button className={tab === "contacts" ? "active" : ""} onClick={() => setTab("contacts")}>Key Contacts <span>{tracker.data?.contacts.length}</span></button>
             <button className={tab === "outreach" ? "active" : ""} onClick={() => setTab("outreach")}>Outreach <span>{draftsWaitingCount}</span></button>
@@ -1893,8 +1893,8 @@ export function App() {
           {tab !== "settings" && tab !== "health" && tab !== "logins" && tab !== "onboarding" && <button className="add-button" onClick={() => tab === "contacts" ? setEditingContact(null) : tab === "outreach" ? setEditingDraft(null) : setEditingApp(null)}><Icon name="plus"/> {tab === "contacts" ? "Add contact" : tab === "outreach" ? "New draft" : "Quick add"}</button>}
         </div>
 
-        {(tab === "pipeline" || tab === "bridge") && (
-          <CommandCenter slim apps={commandApps} contactCount={allContacts.length} draftsWaiting={draftsWaitingCount} onEdit={setEditingApp} onShowDrafts={() => setTab("outreach")} activeFilter={boardFilter} onFilter={(filter) => { setBoardFilter(filter); setTab(currentLane === "bridge" ? "bridge" : "pipeline"); }} onShowContacts={() => setTab("contacts")} />
+        {(tab === "pipeline" || tab === "secondary") && (
+          <CommandCenter slim apps={commandApps} contactCount={allContacts.length} draftsWaiting={draftsWaitingCount} onEdit={setEditingApp} onShowDrafts={() => setTab("outreach")} activeFilter={boardFilter} onFilter={(filter) => { setBoardFilter(filter); setTab(currentLane === "secondary" ? "secondary" : "pipeline"); }} onShowContacts={() => setTab("contacts")} />
         )}
 
         {tab !== "settings" && tab !== "health" && tab !== "logins" && tab !== "onboarding" && (
@@ -1909,12 +1909,12 @@ export function App() {
           <OnboardingView />
         ) : tab === "health" ? (
           <div className="health-view">
-            <CommandCenter apps={commandApps} contactCount={allContacts.length} draftsWaiting={draftsWaitingCount} onEdit={setEditingApp} onShowDrafts={() => setTab("outreach")} activeFilter={boardFilter} onFilter={(filter) => { setBoardFilter(filter); setTab(currentLane === "bridge" ? "bridge" : "pipeline"); }} onShowContacts={() => setTab("contacts")} />
+            <CommandCenter apps={commandApps} contactCount={allContacts.length} draftsWaiting={draftsWaitingCount} onEdit={setEditingApp} onShowDrafts={() => setTab("outreach")} activeFilter={boardFilter} onFilter={(filter) => { setBoardFilter(filter); setTab(currentLane === "secondary" ? "secondary" : "pipeline"); }} onShowContacts={() => setTab("contacts")} />
             <HealthPanel apps={allApps} contacts={allContacts} drafts={allDrafts} report={report} running={checking} onRun={runHealthCheck} onShowGuide={() => setGuideOpen(true)} />
           </div>
         ) : tab === "settings" ? (
           <SettingsView
-            settings={tracker.data?.settings ?? { auto_apply_enabled: true, auto_apply_bridge_enabled: true, auto_apply_companies: ["*"], auto_apply_role_types: ["*"], auto_apply_scope_notes: "", auto_apply_states: [...DEFAULT_STATES] }}
+            settings={tracker.data?.settings ?? { auto_apply_enabled: true, auto_apply_secondary_enabled: true, auto_apply_companies: ["*"], auto_apply_role_types: ["*"], auto_apply_scope_notes: "", auto_apply_states: [...DEFAULT_STATES] }}
             applications={allApps}
             onUpdate={updateSettings}
           />
@@ -1953,7 +1953,7 @@ export function App() {
                 <button type="button" className="filter-clear" onClick={() => setBoardFilter("All")}>Show all</button>
               </div>
             )}
-            <section className={`board ${tab === "bridge" ? "bridge-board" : ""} ${visibleStages.length === 1 ? "board-single" : ""}`} aria-label={tab === "bridge" ? "Bridge jobs board" : "Job pipeline"}>
+            <section className={`board ${tab === "secondary" ? "secondary-board" : ""} ${visibleStages.length === 1 ? "board-single" : ""}`} aria-label={tab === "secondary" ? "Secondary jobs board" : "Job pipeline"}>
               {visibleStages.map((stage) => <StageColumn key={stage} stage={stage} apps={boardApps.filter((app) => app.stage === stage)} onEdit={setEditingApp} onDelete={deleteApplication} onMove={moveApplication} onResetPrep={resetPrep} onQuestionnaire={setQuestionnaireApp} onShowGuide={() => setGuideOpen(true)}/>)}
             </section>
             <section className="archive" aria-label="Archive of closed and rejected applications">

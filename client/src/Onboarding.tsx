@@ -146,7 +146,7 @@ export function OnboardingView() {
             </label>
             {str(profile, "resume_file_name") && <p className="settings-current wide">On file: {str(profile, "resume_file_name")}{str(profile, "resume_text") ? ` — ${str(profile, "resume_text").length.toLocaleString()} characters of text available` : " — paste the text below"}</p>}
             <Area k="resume_text" label="Resume text (paste if you uploaded a PDF/DOCX)" rows={8} placeholder="Paste your full resume text here…" />
-            <Text k="headline" label="Headline" placeholder="The one line under your name, e.g. 'Aspiring surgical sales rep — 5 yrs clinical support'" />
+            <Text k="headline" label="Headline" placeholder="The one line under your name, e.g. 'Career-changer with 5 years in customer support, targeting operations roles'" />
             <Text k="linkedin_profile_url" label="LinkedIn profile URL" placeholder="https://www.linkedin.com/in/…" type="url" />
             <Text k="portfolio_url" label="Portfolio / website URL (optional)" type="url" />
           </div>
@@ -173,7 +173,7 @@ export function OnboardingView() {
             <p className="settings-desc wide">The sweep is only as good as the alerts feeding it. On LinkedIn: Jobs → Job alerts → create one alert per target title + location, email frequency <strong>Daily</strong>. On Indeed: Job Alerts → add the same titles + locations, daily emails on.</p>
             <Select k="linkedin_alerts_status" label="LinkedIn job-alert emails" options={[["set_up", "Set up"], ["not_yet", "Not yet"], ["help", "Help me set them up"]]} />
             <Select k="linkedin_alert_frequency" label="LinkedIn alert frequency" options={[["daily", "Daily"], ["weekly", "Weekly"], ["off", "Off"]]} />
-            <Text k="linkedin_alert_titles" label="LinkedIn alert titles" placeholder="Comma-separated, e.g. Associate Sales Rep, Territory Manager" />
+            <Text k="linkedin_alert_titles" label="LinkedIn alert titles" placeholder="Comma-separated — the titles from your Targets step" />
             <Text k="linkedin_alert_locations" label="LinkedIn alert locations" placeholder="Comma-separated cities or 'Remote'" />
             <Select k="indeed_alerts_status" label="Indeed job-alert emails" options={[["set_up", "Set up"], ["not_yet", "Not yet"], ["help", "Help me set them up"]]} />
             <Select k="indeed_alert_frequency" label="Indeed alert frequency" options={[["daily", "Daily"], ["weekly", "Weekly"], ["off", "Off"]]} />
@@ -198,11 +198,11 @@ export function OnboardingView() {
 
         {step === 4 && (
           <div className="form-grid">
-            <Text k="primary_lane" label="Primary lane (your words)" placeholder="e.g. medical sales, product design, skilled trades" />
+            <Text k="primary_lane" label="Primary lane (your words)" placeholder="e.g. your target field, product design, skilled trades" />
             <Area k="target_titles" label="Target job titles — the exact titles that count as a match" rows={3} placeholder="One per line" />
             <Text k="seniority_target" label="Seniority target" placeholder="e.g. associate / entry-level, mid-level, senior" />
-            <Text k="bridge_lane" label="Bridge lane (income while you search — optional)" placeholder="e.g. fitness coaching, freelance design" />
-            <Area k="bridge_titles" label="Bridge-lane titles" rows={2} placeholder="One per line" />
+            <Text k="secondary_lane" label="Secondary lane (income while you search — optional)" placeholder="e.g. freelance design, part-time retail" />
+            <Area k="secondary_titles" label="Secondary-lane titles" rows={2} placeholder="One per line" />
             <Area k="dream_companies" label="Dream / priority companies" rows={2} placeholder="One per line" />
             <Area k="avoid_companies" label="Companies to avoid" rows={2} placeholder="One per line" />
             <Area k="deal_breakers" label="Hard deal-breakers" rows={2} placeholder="e.g. pure commission, >50% travel, relocation" />
@@ -231,7 +231,7 @@ export function OnboardingView() {
             <Text k="target_total" label="Target total compensation" placeholder="e.g. $90,000/yr" />
             <Text k="min_base" label="Minimum base you'd accept" placeholder="e.g. $65,000/yr" />
             <Text k="min_total" label="Minimum total you'd accept" placeholder="e.g. $75,000/yr" />
-            <Area k="pay_notes" label="Pay notes" rows={3} placeholder="e.g. No pure-commission roles. Car allowance matters. Hourly bridge work must be guaranteed, not commission-only." />
+            <Area k="pay_notes" label="Pay notes" rows={3} placeholder="e.g. No pure-commission roles. Car allowance matters. Hourly secondary-lane work must be guaranteed, not commission-only." />
           </div>
         )}
 

@@ -2,7 +2,7 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const applications = sqliteTable("applications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  lane: text("lane", { enum: ["medical", "bridge"] }).notNull(),
+  lane: text("lane", { enum: ["primary", "secondary"] }).notNull(),
   company: text("company").notNull(),
   role: text("role").notNull(),
   location: text("location").notNull().default(""),
@@ -54,7 +54,7 @@ export const outreachDrafts = sqliteTable("outreach_drafts", {
 export const trackerSettings = sqliteTable("tracker_settings", {
   id: integer("id").primaryKey(),
   autoApply: integer("auto_apply").notNull().default(1),
-  autoApplyBridge: integer("auto_apply_bridge_enabled").notNull().default(1),
+  autoApplySecondary: integer("auto_apply_secondary_enabled").notNull().default(1),
   autoApplyCompanies: text("auto_apply_companies").notNull().default('["*"]'),
   autoApplyRoleTypes: text("auto_apply_role_types").notNull().default('["*"]'),
   autoApplyScopeNotes: text("auto_apply_scope_notes").notNull().default(""),

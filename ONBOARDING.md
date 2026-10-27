@@ -52,9 +52,9 @@ explicit opt-in.
 
 ## 5. What you're targeting
 
-- Primary lane (their words, e.g. "medical sales") and the exact job
+- Primary lane (their words, e.g. "your target field") and the exact job
   titles that count as a match.
-- A second, "bridge" lane for income-while-you-search roles, if any.
+- A second, "secondary" lane for income-while-you-search roles, if any.
 - Seniority target, industries/specialties, dream companies, companies
   to avoid, and hard deal-breakers.
 

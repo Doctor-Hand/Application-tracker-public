@@ -4,7 +4,7 @@
 -- included. Apply to a fresh SQLite database.
 CREATE TABLE applications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  lane TEXT NOT NULL CHECK (lane IN ('medical','bridge')),
+  lane TEXT NOT NULL CHECK (lane IN ('primary','secondary')),
   company TEXT NOT NULL,
   role TEXT NOT NULL,
   location TEXT NOT NULL DEFAULT '',
@@ -68,7 +68,7 @@ CREATE TABLE outreach_drafts (
 CREATE TABLE tracker_settings (
   id INTEGER PRIMARY KEY NOT NULL,
   auto_apply INTEGER DEFAULT 1 NOT NULL,
-  auto_apply_bridge_enabled INTEGER DEFAULT 1 NOT NULL,
+  auto_apply_secondary_enabled INTEGER DEFAULT 1 NOT NULL,
   auto_apply_companies TEXT DEFAULT '["*"]' NOT NULL,
   auto_apply_role_types TEXT DEFAULT '["*"]' NOT NULL,
   auto_apply_scope_notes TEXT DEFAULT '' NOT NULL,

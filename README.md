@@ -35,7 +35,7 @@ Full questionnaire: [ONBOARDING.md](ONBOARDING.md)
 
 ## What's in this repo
 
-- `client/src/` — React UI (pipeline, bridge jobs, contacts, outreach,
+- `client/src/` — React UI (pipeline, secondary jobs, contacts, outreach,
   settings, and the onboarding wizard)
 - `server/src/` — server actions (`actions.ts`) and Drizzle schema
   (`schema.ts`)
